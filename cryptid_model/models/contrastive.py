@@ -1,0 +1,1 @@
+# InfoNCE training loop for TM onto and to Spec alignment

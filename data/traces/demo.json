@@ -1,0 +1,41 @@
+{
+  "tm_id": null,
+  "runs": [
+    {
+      "seed": {
+        "tape": "",
+        "head": 0
+      },
+      "halted": true,
+      "steps": 1,
+      "head": 2,
+      "ones": 1,
+      "min_idx": 0,
+      "max_idx": 0
+    },
+    {
+      "seed": {
+        "tape": "1",
+        "head": 0
+      },
+      "halted": true,
+      "steps": 1,
+      "head": 0,
+      "ones": 1,
+      "min_idx": 0,
+      "max_idx": 0
+    },
+    {
+      "seed": {
+        "tape": "0001000",
+        "head": 3
+      },
+      "halted": true,
+      "steps": 1,
+      "head": 3,
+      "ones": 1,
+      "min_idx": 3,
+      "max_idx": 3
+    }
+  ]
+}

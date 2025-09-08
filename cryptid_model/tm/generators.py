@@ -1,5 +1,8 @@
+# This currently just makes a random TM,
+# TODO: represent families of machines; compilers/adapters
+
 import random
-from TM import *
+from tm import *
 
 
 def generate_random_tm(n_states: int) -> TransitionDict:

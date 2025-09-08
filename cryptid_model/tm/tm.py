@@ -1,4 +1,4 @@
-# TM.py
+# tm.py
 # Same public API as before:
 #   tm = TuringMachine(n_states=2, transitions=trans_dict, start_state=0)
 #   halted, steps, cfg = tm.run(max_steps=1000)
