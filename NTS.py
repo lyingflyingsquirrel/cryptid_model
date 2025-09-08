@@ -6,6 +6,7 @@ class NumberTheoreticSystem:
     A structured representation of a number theory problem defined by rules
     operating on a set of state variables.
     """
+
     def __init__(
             self,
             name: str,
@@ -17,80 +18,98 @@ class NumberTheoreticSystem:
     ):
         """
         Initializes the Number Theoretic System.
-
         Args:
-            name (str): name of the problem.
-
-            problem_type (str): The type of problem. "Termination", "Search", "Function
-
-            state_variables (List[str]): Names of variables
-
+            name (str): Human-readable name (e.g., "Weak Collatz Conjecture").
+            problem_type (str): The type of problem (e.g., "Termination", "Search").
+            state_variables (List[str]): Names of variables the system uses (e.g., ['n']).
             initialization_rules (List[str]): Rules to set up the initial state from 'input'
-
+                                              (e.g., ["n = input"]).
             transition_rules (List[Tuple[str, str]]): The core logic as (condition, action) pairs.
                                                       Example: [("n % 2 == 0", "n = n // 2")].
-
             termination_condition (str): The condition for halting (e.g., "n == 1").
         """
         self.name = name
         self.problem_type = problem_type
         self.state_variables = state_variables
         self.initialization_rules = initialization_rules
-        self.transition_rules = transition_rules
+        # Replace Python's integer division // with / for Laconic
+        self.transition_rules = [(c, a.replace('//', '/')) for c, a in transition_rules]
         self.termination_condition = termination_condition
 
     def __repr__(self) -> str:
         """Provides a concise representation of the NTS object."""
         return f"<NTS name='{self.name}' type='{self.problem_type}' vars={self.state_variables}>"
 
+    def to_laconic(self) -> str:
+        """
+        Translates the NTS rules into a string of Laconic code.
+        """
+        if self.problem_type != "Termination":
+            raise NotImplementedError(
+                f"Laconic compilation for problem type '{self.problem_type}' is not yet supported.")
+
+        # 1. Variable declarations
+        var_declarations = "\n".join([f"var {var};" for var in self.state_variables])
+
+        # 2. Initialization
+        initialization_code = "\n".join([f"{rule};" for rule in self.initialization_rules])
+
+        # 3. Main loop and conditions
+        # The while loop runs as long as the termination condition is NOT met.
+        loop_condition = self.termination_condition.replace("==", "!=")
+
+        # Build the if/else if/else chain
+        if_chain = ""
+        for i, (condition, action) in enumerate(self.transition_rules):
+            action_code = f"  {action.strip()};"
+            if i == 0:
+                if_chain += f"  if ({condition}) {{\n    {action_code}\n  }}"
+            else:
+                # For simplicity, we'll assume the second condition is the 'else' block
+                if_chain += f" else {{\n    {action_code}\n  }}"
+
+        # Assemble the final code using a template
+        laconic_code = f"""
+{var_declarations}
+{initialization_code}
+
+while ({loop_condition}) {{
+{if_chain}
+}}
+"""
+        return laconic_code.strip()
+
     def simulate(self, input_value: int, max_steps: int = 1000) -> Dict[str, Any]:
         """
         Simulates the execution of the NTS for a given input.
-
-        Args:
-            input_value (int): The starting integer for the simulation.
-            max_steps (int):
-
-        Returns:
-            A dictionary containing the results of the simulation.
         """
-        # The 'state' dictionary will hold the current values of our state variables.
-        # It also serves as the local namespace for exec() and eval().
-        # NOTE: Using exec/eval is safe here because we control the rule strings.
-
-        # 1. Initialization
         local_scope = {'input': input_value}
         for rule in self.initialization_rules:
             exec(rule, {}, local_scope)
 
-        # Extract only the defined state variables into our main state dict
         state = {var: local_scope[var] for var in self.state_variables}
-
         history = [state.copy()]
         terminated = False
         steps = 0
 
-        # 2. Simulation Loop
         for i in range(max_steps):
             steps = i
-            # Create a copy of the state for this step's evaluation
             current_scope = state.copy()
 
-            # Check for termination first
             if eval(self.termination_condition, {}, current_scope):
                 terminated = True
                 break
 
-            # Apply the first transition rule whose condition is met
             rule_applied = False
             for condition, action in self.transition_rules:
+                # We use the original Python-compatible rules for simulation
+                py_action = action.replace('/', '//')
                 if eval(condition, {}, current_scope):
-                    exec(action, {}, current_scope)
-                    # Update the main state from the modified scope
+                    exec(py_action, {}, current_scope)
                     state = {var: current_scope[var] for var in self.state_variables}
                     history.append(state.copy())
                     rule_applied = True
-                    break  # Ensure only one rule fires per step
+                    break
 
             if not rule_applied:
                 return {
@@ -98,41 +117,9 @@ class NumberTheoreticSystem:
                     'steps': steps, 'final_state': state, 'history': history
                 }
 
-        # 3. Format and return result
         reason = "Terminated" if terminated else "Max steps reached"
         return {
             'terminated': terminated, 'reason': reason, 'steps': steps,
             'final_state': state, 'history': history
         }
 
-
-# --- Example Usage, collatz conjecture ---
-# if __name__ == "__main__":
-#     # Define the Weak Collatz Conjecture as an NTS
-#     collatz_nts = NumberTheoreticSystem(
-#         name="Weak Collatz Conjecture",
-#         problem_type="Search",
-#         state_variables=['n'],
-#         initialization_rules=["n = input"],
-#         transition_rules=[
-#             ("n % 2 == 0", "n = n // 2"),
-#             ("n % 2 != 0", "n = 3*n + 1")
-#         ],
-#         termination_condition="n == 1"
-#     )
-#
-#     print(f"Created NTS: {collatz_nts}")
-#     print("-" * 30)
-#
-#     # Simulate the NTS with a starting input of 10
-#     start_input = 10
-#     print(f"Simulating for input = {start_input}...")
-#     result = collatz_nts.simulate(start_input)
-#
-#     # Print the results
-#     print(f"Terminated: {result['terminated']} ({result['reason']})")
-#     print(f"Steps: {result['steps']}")
-#     print(f"Final State: {result['final_state']}")
-#     print("History:")
-#     for i, state in enumerate(result['history']):
-#         print(f"  Step {i}: {state}")
